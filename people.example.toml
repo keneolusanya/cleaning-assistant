@@ -1,0 +1,41 @@
+# Copy to people.toml and fill in real numbers (E.164, e.g. +16175551234).
+# people.toml is gitignored. `chorebot init` loads it.
+#
+# kitchen = usage weight for kitchen reset + fridge (3 heavy, 2 medium, 1 light, 0 none).
+
+admin = "Kene"
+
+[[people]]
+name = "Kene"
+phone = "+15550000001"
+kitchen = 3
+
+[[people]]
+name = "Salajan"
+phone = "+15550000002"
+kitchen = 3
+
+[[people]]
+name = "Alula"
+phone = "+15550000003"
+kitchen = 3
+
+[[people]]
+name = "Yonas"
+phone = "+15550000004"
+kitchen = 2
+
+[[people]]
+name = "Schneider"
+phone = "+15550000005"
+kitchen = 2
+
+[[people]]
+name = "Jones"
+phone = "+15550000006"
+kitchen = 2
+
+[[people]]
+name = "Allahji"
+phone = "+15550000007"
+kitchen = 1

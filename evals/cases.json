@@ -1,0 +1,140 @@
+[
+  {
+    "name": "done, one open ask",
+    "from": "Kene", "text": "done!",
+    "setup": [{"task": "trash", "as": "t1", "ask": "Kene"}],
+    "expect": {"tools": ["complete_task"], "args": {"complete_task": {"task_id": "$t1"}}}
+  },
+  {
+    "name": "done, two open asks -> ask which",
+    "from": "Kene", "text": "done",
+    "setup": [{"task": "trash", "as": "t1", "ask": "Kene"}, {"task": "kitchen", "as": "t2", "ask": "Kene"}],
+    "expect": {"tools": []}
+  },
+  {
+    "name": "bathroom partial",
+    "from": "Alula", "text": "did the toilet and sink, that's all I had time for",
+    "setup": [{"task": "bathroom_1", "as": "b1", "ask": "Alula", "status": "accepted"}],
+    "expect": {"tools": ["complete_task"], "args": {"complete_task": {"task_id": "$b1", "parts": ["toilet", "sink_mirror"]}}}
+  },
+  {
+    "name": "bathroom bare done -> ask what they got to",
+    "from": "Alula", "text": "bathroom's done",
+    "setup": [{"task": "bathroom_2", "as": "b2", "ask": "Alula", "status": "accepted"}],
+    "expect": {"tools": []}
+  },
+  {
+    "name": "bathroom whole thing",
+    "from": "Alula", "text": "cleaned the whole bathroom, everything",
+    "setup": [{"task": "bathroom_2", "as": "b2", "ask": "Alula"}],
+    "expect": {"tools": ["complete_task"], "args": {"complete_task": {"task_id": "$b2", "parts": ["toilet", "sink_mirror", "shower", "floor"]}}}
+  },
+  {
+    "name": "decline",
+    "from": "Yonas", "text": "busy this weekend, sorry",
+    "setup": [{"task": "kitchen", "as": "k", "ask": "Yonas"}],
+    "expect": {"tools": ["decline_task"], "args": {"decline_task": {"task_id": "$k"}}}
+  },
+  {
+    "name": "accept",
+    "from": "Yonas", "text": "yeah I got it",
+    "setup": [{"task": "kitchen", "as": "k", "ask": "Yonas"}],
+    "expect": {"tools": ["accept_task"], "args": {"accept_task": {"task_id": "$k"}}}
+  },
+  {
+    "name": "plain ok to one ask",
+    "from": "Jones", "text": "ok",
+    "setup": [{"task": "trash", "as": "t1", "ask": "Jones"}],
+    "expect": {"any_of": [["accept_task"], []]}
+  },
+  {
+    "name": "snooze tomorrow",
+    "from": "Kene", "text": "remind me tomorrow",
+    "setup": [{"task": "common", "as": "c", "ask": "Kene"}],
+    "expect": {"tools": ["snooze_task"], "args": {"snooze_task": {"task_id": "$c"}}}
+  },
+  {
+    "name": "snooze after class",
+    "from": "Kene", "text": "sure, after my 3pm class",
+    "setup": [{"task": "trash", "as": "t1", "ask": "Kene"}],
+    "expect": {"any_of": [["snooze_task"], ["accept_task", "snooze_task"], ["snooze_task", "accept_task"], ["accept_task"]]}
+  },
+  {
+    "name": "report trash",
+    "from": "Schneider", "text": "trash is full",
+    "setup": [],
+    "expect": {"tools": ["report_needed"], "args": {"report_needed": {"chore": "trash"}}}
+  },
+  {
+    "name": "report fridge",
+    "from": "Allahji", "text": "fridge is getting gross",
+    "setup": [],
+    "expect": {"tools": ["report_needed"], "args": {"report_needed": {"chore": "fridge"}}}
+  },
+  {
+    "name": "retroactive kitchen",
+    "from": "Salajan", "text": "I already did the kitchen yesterday",
+    "setup": [{"task": "kitchen", "as": "k", "ask": "Jones"}],
+    "expect": {"any_of": [["claim_past_work"], ["complete_task"]]}
+  },
+  {
+    "name": "pause until sunday",
+    "from": "Jones", "text": "away until Sunday",
+    "setup": [],
+    "expect": {"tools": ["pause"]}
+  },
+  {
+    "name": "back early",
+    "from": "Jones", "text": "I'm back",
+    "setup": [{"pause": "Jones", "days": 4}],
+    "expect": {"tools": ["unpause"]}
+  },
+  {
+    "name": "points question",
+    "from": "Kene", "text": "what are my points?",
+    "setup": [{"credit": "Kene", "chore": "trash", "points": 1}],
+    "expect": {"tools": []}
+  },
+  {
+    "name": "someone else's points stays private",
+    "from": "Kene", "text": "how many points does Salajan have?",
+    "setup": [{"credit": "Salajan", "chore": "kitchen", "points": 2}],
+    "expect": {"tools": [], "reply_excludes": ["2.0", "2 points", "1.6"]}
+  },
+  {
+    "name": "sink check nothing mine",
+    "from": "Kene", "text": "nothing of mine",
+    "setup": [{"sink_check": "s", "ask": ["Kene", "Alula"]}],
+    "expect": {"tools": ["resolve_sink_check"], "args": {"resolve_sink_check": {"task_id": "$s", "outcome": "none_mine"}}}
+  },
+  {
+    "name": "sink check helped with rest",
+    "from": "Alula", "text": "washed my stuff and did the rest of the pile too",
+    "setup": [{"sink_check": "s", "ask": ["Kene", "Alula"]}],
+    "expect": {"tools": ["resolve_sink_check"], "args": {"resolve_sink_check": {"task_id": "$s", "outcome": "washed_others"}}}
+  },
+  {
+    "name": "stop in other words is not a tool",
+    "from": "Yonas", "text": "stop texting me so much",
+    "setup": [],
+    "expect": {"tools": []}
+  },
+  {
+    "name": "done by other",
+    "from": "Kene", "text": "Alula took out the trash already",
+    "setup": [{"task": "trash", "as": "t1", "ask": "Jones"}],
+    "expect": {"tools": ["report_done_by_other"], "args": {"report_done_by_other": {"chore": "trash"}}}
+  },
+  {
+    "name": "tier change goes to admin",
+    "from": "Allahji", "text": "can you move me to the heavy kitchen tier",
+    "setup": [],
+    "expect": {"tools": []}
+  },
+  {
+    "name": "thanks is small talk",
+    "from": "Schneider", "text": "thanks!",
+    "setup": [],
+    "expect": {"tools": []}
+  }
+]
