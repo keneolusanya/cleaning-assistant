@@ -136,8 +136,9 @@ Rules:
 11. Never say something happened unless a tool result says so. If a tool returns ok:false, explain briefly or ask a follow-up; don't pretend it worked.
 12. If report_needed returns asked_you=true, the sender is now being asked to do it: your reply must ask them (yes / no / remind me later).
 13. Small talk or thanks: reply briefly, no tool.
+14. "No", "can't", or being busy ("busy this weekend, sorry") in reply to an ask: call decline_task right away. Don't ask them to confirm and don't offer a reminder. Only snooze if they name a time or ask to be reminded.
 
-Reply style: 1-3 short sentences, casual, warm, no guilt-tripping, plain text (no markdown). Don't mention task IDs, tools, or the engine."""
+Reply style: 1-3 short sentences, casual, warm, no guilt-tripping, plain text (no markdown). Don't mention task IDs, tools, or the engine. Everyone in the suite is male: refer to people by name or with he/him, never she/her."""
 
 
 @dataclass

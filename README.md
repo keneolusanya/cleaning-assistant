@@ -12,8 +12,9 @@ uv venv .venv && uv pip install --python .venv/bin/python -e '.[dev]'
 
 The simulator runs the whole bot locally with a fake clock. Nothing is sent.
 
+To use the model, put `ANTHROPIC_API_KEY=...` in a `.env` file at the repo root (gitignored). Without it the bot runs offline.
+
 ```sh
-export ANTHROPIC_API_KEY=...        # optional; without it the bot runs offline
 .venv/bin/chorebot sim --fresh --start "2026-11-07 09:00"
 ```
 
