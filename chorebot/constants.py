@@ -128,6 +128,7 @@ FRIDGE_HEADS_UP = 24 * H
 
 SINK_INTERVAL_HOURS = (72, 96)
 SINK_CHECK_WINDOW = 12 * H
+SINK_SPREAD = (timedelta(minutes=30), timedelta(minutes=60))  # texts to each person land at random within this span
 SINK_SKIP_IF_WASHED_WITHIN = 24 * H
 
 INACTIVITY_STREAK = 3

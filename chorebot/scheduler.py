@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from . import cadence
 from . import constants as C
 from . import fairness, outbox
-from .clock import fmt, iso, local, local_date, parse
+from .clock import iso, local, local_date, parse
 from .db import kv_get, kv_set
 
 if TYPE_CHECKING:
@@ -99,7 +100,7 @@ def _nudges(eng: "Engine") -> None:
         if a["nudges"] < 2:
             eng.db.execute("UPDATE asks SET next_nudge_at = NULL WHERE id = ?", (a["id"],))
             task = eng.task(a["task_id"])
-            facts = {**eng.task_facts(task), "nudge_number": a["nudges"] + 1, "asked_at": fmt(parse(a["sent_at"]))}
+            facts = {**eng.task_facts(task), "nudge_number": a["nudges"] + 1, "asked_at": a["sent_at"]}
             outbox.enqueue(eng, a["person_id"], "nudge", facts, ask_id=a["id"], task_id=task["id"])
         else:
             eng.close_ask(a["id"], "no_response", "nudges ran out")
@@ -143,12 +144,16 @@ def _sink_checks(eng: "Engine") -> None:
     if washed:
         return
     task = eng.create_task("dishes", "sink_check", window_end=now + C.SINK_CHECK_WINDOW, note="sink_check")
+    lo, hi = C.SINK_SPREAD
+    spread = eng.rng.uniform(lo.total_seconds(), hi.total_seconds())
     for p in fairness.active_people(eng.db, now):
         cur = eng.db.execute(
             "INSERT INTO asks(task_id, person_id, round, status, created_at) VALUES (?, ?, 1, 'pending', ?)",
             (task["id"], p["id"], iso(now)),
         )
-        outbox.enqueue(eng, p["id"], "sink_check", {"task_id": task["id"]}, ask_id=cur.lastrowid, task_id=task["id"])
+        send_after = now + timedelta(seconds=eng.rng.uniform(0, spread))
+        outbox.enqueue(eng, p["id"], "sink_check", {"task_id": task["id"]}, ask_id=cur.lastrowid,
+                       task_id=task["id"], send_after=send_after)
 
 
 def _inactivity(eng: "Engine") -> None:
@@ -215,5 +220,5 @@ def recap_facts(eng: "Engine", person) -> dict:
         "suite_done": {C.LABELS.get(r["chore"], r["chore"]): r["n"] for r in suite},
         "still_undone": [C.LABELS[r["chore"]] for r in unresolved],
         "your_no_responses": no_resp,
-        "paused_until": fmt(paused) if paused and paused > now else None,
+        "paused_until": iso(paused) if paused and paused > now else None,
     }

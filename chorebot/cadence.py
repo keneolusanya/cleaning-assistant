@@ -54,17 +54,24 @@ def interval(chore: str) -> timedelta:
     return timedelta(days=7)
 
 
+def end_of_day(dt: datetime) -> datetime:
+    return at_local(local_date(dt), 23, 59)
+
+
 def window_for(chore: str, source: str, created: datetime) -> tuple[datetime, datetime]:
-    """(ask_after, window_end) for a scheduled, re-asked or spun-off task."""
+    """(ask_after, window_end) for a scheduled, re-asked or spun-off task.
+
+    Windows always end at 11:59pm local, so a deadline is a day ("by Tuesday night"), never a clock time.
+    """
     if chore == "fridge":
         ask_after = created + C.FRIDGE_HEADS_UP
-        return ask_after, ask_after + C.WINDOW["fridge"]
+        return ask_after, end_of_day(ask_after + C.WINDOW["fridge"])
     if chore in C.BATHROOMS and source == "scheduled":
         d = local_date(created)
         while d.weekday() != 6:  # through Sunday night
             d += timedelta(days=1)
         return created, at_local(d, 23, 59)
-    return created, created + C.WINDOW[C.recency_family(chore)]
+    return created, end_of_day(created + C.WINDOW[C.recency_family(chore)])
 
 
 def next_sink_check(after: datetime, rng: random.Random) -> datetime:

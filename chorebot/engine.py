@@ -12,7 +12,7 @@ from datetime import datetime
 from . import cadence
 from . import constants as C
 from . import fairness, outbox
-from .clock import Clock, fmt, iso, parse
+from .clock import Clock, iso, parse, say
 from .db import dumps, kv_get, kv_set, loads
 
 
@@ -132,21 +132,14 @@ class Engine:
     def task_facts(self, task: sqlite3.Row) -> dict:
         chore = task["chore"]
         covering = self._was_passed_on(task["id"], exclude_person=None)
-        if chore in C.BATHROOMS:
-            parts = loads(task["parts"]) or []
-            base = C.PART_POINTS * len(parts)
-        elif chore == "dishes":
-            parts, base = None, C.DISHES_OTHERS
-        else:
-            parts, base = None, C.POINTS[chore]
+        parts = (loads(task["parts"]) or []) if chore in C.BATHROOMS else None
         return {
             "task_id": task["id"],
             "chore": C.LABELS[chore],
             "parts_remaining": parts,
-            "deadline": fmt(parse(task["window_end"])),
+            "deadline": task["window_end"],
             "note": task["note"],
             "someone_passed_on_it": covering,
-            "points_available": round(base * (C.COVER_BONUS if covering else 1), 2),
             "source": task["source"],
         }
 
@@ -357,7 +350,7 @@ class Engine:
             (iso(checkin), mine["id"]),
         )
         outbox.cancel(self, "ask_id = ?", (mine["id"],))
-        return {"ok": True, "chore": C.LABELS[task["chore"]], "deadline": fmt(end), "will_check_in": fmt(checkin)}
+        return {"ok": True, "chore": C.LABELS[task["chore"]], "deadline": say(end, self.now), "will_check_in": say(checkin, self.now, day_only=True)}
 
     def tool_decline_task(self, person, task_id, reason: str = "") -> dict:
         task = self._open_task(task_id)
@@ -387,7 +380,7 @@ class Engine:
         )
         outbox.cancel(self, "ask_id = ?", (mine["id"],))
         end = parse(task["window_end"])
-        return {"ok": True, "remind_at": fmt(t), "past_deadline": bool(end and t > end), "deadline": fmt(end)}
+        return {"ok": True, "remind_at": say(t, self.now), "past_deadline": bool(end and t > end), "deadline": say(end, self.now)}
 
     def tool_complete_task(self, person, task_id, parts: list[str] | None = None, photo: bool = False) -> dict:
         return self._complete(person, self._open_task(task_id), parts, photo, retroactive=False)
@@ -437,11 +430,11 @@ class Engine:
             "asked_you": bool(asked and asked["person_id"] == person["id"]),
             "asked": self.name(asked["person_id"]) if asked else None,
             "fridge_heads_up_sent": chore == "fridge",
-            "first_ask_at": fmt(ask_after) if ask_after else None,
+            "first_ask_at": say(ask_after, self.now, day_only=True),
         }
 
     def _fridge_heads_up(self, task: sqlite3.Row, skip: int | None = None) -> None:
-        facts = {"task_id": task["id"], "clear_out_from": fmt(parse(task["ask_after"]))}
+        facts = {"task_id": task["id"], "clear_out_from": task["ask_after"]}
         for p in fairness.active_people(self.db, self.now):
             if p["id"] != skip:
                 outbox.enqueue(self, p["id"], "fridge_heads_up", facts, task_id=task["id"])
@@ -504,7 +497,7 @@ class Engine:
                         (iso(self.now), iso(t), person["id"]))
         handed = self._hand_off(person["id"], "handoff_pause")
         outbox.cancel(self, "person_id = ? AND purpose != 'recap'", (person["id"],))
-        return {"ok": True, "paused_until": fmt(t), "handed_off": handed}
+        return {"ok": True, "paused_until": say(t, self.now), "handed_off": handed}
 
     def tool_unpause(self, person) -> dict:
         was = bool(person["paused_until"] and parse(person["paused_until"]) > self.now)

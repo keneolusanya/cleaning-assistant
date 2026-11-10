@@ -11,8 +11,8 @@ import random
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from chorebot import fairness
-from chorebot.clock import TZ, FakeClock, iso
+from chorebot import cadence, fairness
+from chorebot.clock import TZ, FakeClock, iso, speak_facts
 from chorebot.db import connect
 from chorebot.engine import Engine
 from chorebot.interpreter import ClaudeInterpreter
@@ -32,14 +32,14 @@ def build(case: dict) -> tuple[Engine, dict]:
         for step in case.get("setup", []):
             if "task" in step:
                 task = eng.create_task(step["task"], step.get("source", "scheduled"),
-                                       window_end=eng.now + timedelta(days=2))
+                                       window_end=cadence.end_of_day(eng.now + timedelta(days=2)))
                 aliases[step["as"]] = task["id"]
                 if "ask" in step:
                     p = eng.person_by_name(step["ask"])
                     ask = eng.ask(task, p["id"], inline=True)
                     if step.get("status", "pending") != "pending":
                         eng.db.execute("UPDATE asks SET status = ? WHERE id = ?", (step["status"], ask["id"]))
-                    eng.log_message(p["id"], "out", template("ask", eng.task_facts(task), p["name"]), purpose="ask")
+                    eng.log_message(p["id"], "out", template("ask", speak_facts(eng.task_facts(task), eng.now), p["name"]), purpose="ask")
             elif "sink_check" in step:
                 task = eng.create_task("dishes", "sink_check", window_end=eng.now + timedelta(hours=12))
                 aliases[step["sink_check"]] = task["id"]

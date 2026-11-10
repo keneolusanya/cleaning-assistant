@@ -64,7 +64,7 @@ def test_bathrooms_scheduled_saturday_through_sunday_night(h):
 def test_sink_check_goes_to_everyone_without_nudges(h):
     h.quiet_calendar()
     kv_set(h.db, "due:sink_check", iso(h.clock.now()))
-    h.tick()
+    h.advance(timedelta(hours=1))  # texts are spread over up to an hour
     assert len([m for m in h.sender.sent if m["purpose"] == "sink_check"]) == 7
     task = h.db.execute("SELECT * FROM tasks WHERE source = 'sink_check'").fetchone()
     assert h.tool("Kene", "resolve_sink_check", task_id=task["id"], outcome="washed_mine")["points"] == 0.25
@@ -74,7 +74,7 @@ def test_sink_check_goes_to_everyone_without_nudges(h):
     assert [m for m in h.sender.sent if m["purpose"] == "nudge"] == []
     assert all(p["no_response_streak"] == 0 for p in h.db.execute("SELECT * FROM people"))
     nxt = parse(kv_get(h.db, "due:sink_check"))
-    assert timedelta(days=3) - timedelta(hours=9) <= nxt - h.clock.now() + timedelta(hours=13) <= timedelta(days=4, hours=9)
+    assert timedelta(days=3) - timedelta(hours=9) <= nxt - h.clock.now() + timedelta(hours=14) <= timedelta(days=4, hours=9)
 
 
 def test_sink_check_skipped_if_someone_washed_everything_recently(h):

@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 from . import constants as C
-from .clock import at_local, iso, local, local_date, parse
+from .clock import at_local, iso, local, local_date, parse, speak_facts
 from .db import dumps, loads
 
 if TYPE_CHECKING:
@@ -169,7 +169,7 @@ def flush(eng: "Engine") -> int:
 
 def _deliver(eng: "Engine", row) -> bool:
     person = eng.person(row["person_id"])
-    facts = loads(row["facts"]) or {}
+    facts = speak_facts(loads(row["facts"]) or {}, eng.now)
     body = eng.writer.write(row["purpose"], facts, person["name"], eng.recent_outgoing(person["id"]))
     try:
         sid = eng.sender.send(person["phone"], body, purpose=row["purpose"], name=person["name"])

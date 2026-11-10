@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from . import constants as C
 from . import fairness
-from .clock import fmt, iso, local, parse
+from .clock import iso, local, parse, say
 from .db import loads
 
 if TYPE_CHECKING:
@@ -33,9 +33,9 @@ def build(eng: "Engine", person, exclude_message_id: int | None = None) -> dict:
             "chore": C.LABELS[a["chore"]] if a["source"] != "sink_check" else "sink check (dishes)",
             "status": a["status"],
             "parts_remaining": loads(a["parts"]),
-            "deadline": fmt(parse(a["window_end"])),
-            "asked_at": fmt(parse(a["sent_at"] or a["created_at"])),
-            "remind_at": fmt(parse(a["remind_at"])),
+            "deadline": say(parse(a["window_end"]), now),
+            "asked_at": say(parse(a["sent_at"] or a["created_at"]), now),
+            "remind_at": say(parse(a["remind_at"]), now),
         })
 
     open_tasks = []
@@ -50,15 +50,15 @@ def build(eng: "Engine", person, exclude_message_id: int | None = None) -> dict:
             "chore_key": t["chore"],
             "chore": C.LABELS[t["chore"]],
             "parts_remaining": loads(t["parts"]),
-            "deadline": fmt(parse(t["window_end"])),
-            "starts_asking_at": fmt(parse(t["ask_after"])) if parse(t["ask_after"]) > now else None,
+            "deadline": say(parse(t["window_end"]), now),
+            "starts_asking_at": say(parse(t["ask_after"]), now) if parse(t["ask_after"]) > now else None,
             "currently_asked": holders,
             "source": t["source"],
         })
 
     ledger = [
         {"ledger_id": r["id"], "person": eng.name(r["person_id"]), "chore": C.LABELS.get(r["chore"], r["chore"]),
-         "when": fmt(parse(r["created_at"])), "detail": r["reason"]}
+         "when": say(parse(r["created_at"]), now), "detail": r["reason"]}
         for r in eng.db.execute(
             "SELECT * FROM ledger WHERE created_at >= ? AND chore != 'adjust' AND points > 0 ORDER BY id",
             (iso(now - C.LEDGER_LOOKBACK),),
@@ -66,7 +66,7 @@ def build(eng: "Engine", person, exclude_message_id: int | None = None) -> dict:
     ]
 
     history = [
-        {"when": fmt(parse(m["created_at"])), "from": "them" if m["direction"] == "in" else "bot",
+        {"when": say(parse(m["created_at"]), now), "from": "them" if m["direction"] == "in" else "bot",
          "text": m["body"] + (" [photo attached]" if m["media"] else "")}
         for m in reversed(eng.db.execute(
             "SELECT * FROM messages WHERE person_id = ? AND created_at >= ? AND id != ? ORDER BY id DESC LIMIT ?",
@@ -85,7 +85,7 @@ def build(eng: "Engine", person, exclude_message_id: int | None = None) -> dict:
             "your_fair_share": round(share, 2),
             "ahead_of_share_by": round(bal - share, 2),
             "kitchen_tier_weight": weights.get("kitchen", 1),
-            "paused_until": fmt(paused) if paused and paused > now else None,
+            "paused_until": say(paused, now) if paused and paused > now else None,
             "photo_request_mode": bool(photo_mode and photo_mode > now),
         },
         "group_average_points": round(fairness.group_average(eng.db, now), 2),

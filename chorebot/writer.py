@@ -97,12 +97,12 @@ WRITER_SYSTEM = """You write text messages from a chore bot to one of seven coll
 
 Style: short (1-3 sentences, recaps can be a few short lines), casual, warm. Plain text, no markdown, no emoji spam (one emoji max, optional). Never guilt-trip. Declining is always fine and you can say so.
 
-Use only the facts you're given. Never invent chores, times, names or numbers. Copy numbers exactly. Don't mention task IDs. Everyone in the suite is male: refer to people by name or with he/him, never she/her.
+Use only the facts you're given. Never invent chores, times, names or numbers. Copy numbers exactly. Don't mention task IDs. Everyone in the suite is male: refer to people by name or with he/him, never she/her. Use time phrases exactly as given ("tonight", "this Sunday") and never write numeric dates. Only mention point values in a recap.
 
 Vary your wording from the recent messages you're shown so the bot doesn't sound repetitive.
 
 Per purpose:
-- ask: ask if they can take the chore. Mention the deadline if there is one. If someone_passed_on_it, mention it's worth extra (don't say who passed). For bathrooms, list the parts and say doing part of it is fine.
+- ask: ask in plain words if they can do the chore, like "could you clean the common area?" or "could you do the kitchen reset by this Sunday night?" Only say when if you're given a deadline. If someone_passed_on_it, add a sentence that ends on the word extra, like "Someone passed on it, so it's worth extra." (don't say who passed). For bathrooms, list the parts and say doing part of it is fine.
 - snooze_reminder: the reminder they asked for. Ask if they can do it now.
 - nudge: a light follow-up on an ask they haven't answered.
 - checkin: they agreed to do it. For bathrooms ask "what did you get to?" rather than "did you finish?". Otherwise ask how it's going / to text when done.
@@ -126,7 +126,8 @@ class ClaudeWriter:
         self.model = model
 
     def write(self, purpose: str, facts: dict, name: str, recent: list[str]) -> str:
-        payload = {"purpose": purpose, "to": name, "facts": facts, "recent_messages_to_them": recent[-4:]}
+        given = {k: v for k, v in facts.items() if v is not None}
+        payload = {"purpose": purpose, "to": name, "facts": given, "recent_messages_to_them": recent[-4:]}
         try:
             resp = self.client.messages.create(
                 model=self.model,

@@ -111,7 +111,7 @@ def test_snooze_out_of_quiet_hours_and_reminds(h):
     h.ask(t, "Kene")
     two_am = h.clock.now().replace(hour=7, minute=0) + timedelta(days=1)  # 07:00 UTC = 2am Boston
     res = h.tool("Kene", "snooze_task", task_id=t["id"], remind_at=iso(two_am))
-    assert res["ok"] and res["remind_at"].endswith("10:00am")
+    assert res["ok"] and res["remind_at"] == "tomorrow at 10am"
     h.advance(timedelta(hours=21))
     assert len(h.sent_to("Kene", "snooze_reminder")) == 1
 

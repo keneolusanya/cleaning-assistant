@@ -314,12 +314,12 @@ The bot never judges who is telling the truth. Every outcome comes from a fixed 
 | Common area | Scheduled every 10–11 days (randomized so it doesn't always fall on the same weekday) | ~5 days |
 | Trash | Scheduled 3 days after the last trash completion, plus reports at any time. A reported or claimed trash completion resets the clock. | Next day |
 | Fridge clear-out | Scheduled 14 days after the last fridge completion, plus reports. Heads-up to everyone first (below) | ~7 days |
-| Dishes | Suite-wide sink check to **every active person**, every **3–4 days** with random timing. Skipped if someone washed everyone's dishes (a 0.75 dishes credit) in the last 24h. A "sink's full" report goes through `report_needed`, and whoever takes it is offered the 0.75 rate. | None. The next check is only 3–4 days away |
+| Dishes | Suite-wide sink check to **every active person**, every **3–4 days** with random timing, each person's text sent at a random moment within a 30–60 minute spread. Skipped if someone washed everyone's dishes (a 0.75 dishes credit) in the last 24h. A "sink's full" report goes through `report_needed`, and whoever takes it is offered the 0.75 rate. | None. The next check is only 3–4 days away |
 | Anything | Report-driven at any time | Daily while open |
 
 The re-ask rule of thumb is about half the chore's interval. Reported tasks re-ask daily for as long as they're open (§4).
 
-**Fridge heads-up:** whenever a fridge task is created, scheduled or reported, it gets `ask_after` = now + 24h and a window ending 3 days after that. Every active person immediately gets a message asking them to label or claim anything they want kept. These go through the outbox, so quiet hours and the daily cap apply. The first ask goes out at `ask_after`, using the normal ranking and reporter rule. If a fridge task is already open, a second report is just noted on it.
+**Fridge heads-up:** whenever a fridge task is created, scheduled or reported, it gets `ask_after` = now + 24h and a window ending at the end of the day 3 days after that. Every active person immediately gets a message asking them to label or claim anything they want kept. These go through the outbox, so quiet hours and the daily cap apply. The first ask goes out at `ask_after`, using the normal ranking and reporter rule. If a fridge task is already open, a second report is just noted on it.
 
 **Seven-person notes:**
 - Chore supply (~12 points/week) across 7 people is under 2 points each. People will go weeks without being asked, so the weekly recap must show each person where they stand even if they weren't asked, or the rotation becomes invisible.
@@ -432,7 +432,7 @@ Deterministic templates stay in the codebase as a fallback for when the API is u
 
 Decisions made while building v1 that this doc didn't pin down. All the numbers live in `chorebot/constants.py`.
 
-- **Timing details:** kitchen is created Wednesdays 11am (3-day window). Common area and trash have 3- and 2-day windows. After the second nudge, an ask becomes `no_response` 6 hours later. The accepted check-in is 24h after accepting, or 3h before the window closes, whichever is sooner. The recap goes out Sundays at 7pm.
+- **Timing details:** kitchen is created Wednesdays 11am (3-day window). Common area and trash have 3- and 2-day windows. Every window ends at 11:59pm on its last day, so texts name a day ("by Tuesday night"), never a clock time. After the second nudge, an ask becomes `no_response` 6 hours later. The accepted check-in is 24h after accepting, or 3h before the window closes, whichever is sooner. The recap goes out Sundays at 7pm.
 - **Accepted but not done, on reported tasks:** these have no window, so an accepted ask lets go 24h after its check-in and the next person is asked.
 - **Early completions:** if a fixed-cadence chore (bathrooms, kitchen, common) gets done through a report or claim, and the next regular instance is less than half an interval away, that instance is skipped. Trash and fridge count their interval from the last completion anyway.
 - **Volunteering:** `accept_task` on an open task you weren't asked about takes it over. Anyone else's pending ask on it is closed quietly.
